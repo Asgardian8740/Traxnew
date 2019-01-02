@@ -1,8 +1,14 @@
 package in.akshay.traxnew;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mapbox.android.core.permissions.PermissionsListener;
@@ -15,13 +21,18 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
+import java.util.Formatter;
 import java.util.List;
+import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,PermissionsListener{
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener, Speed_Interface {
 
     public MapView mapView;
     private PermissionsManager permissionsManager;
     private MapboxMap mapboxMap;
+
+
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,18 +40,75 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Mapbox.getInstance(this, "pk.eyJ1IjoieWFoc2thIiwiYSI6ImNqcWU1MGgwNTRieTk0M3BwMGQ3YjIyMWIifQ.7xJOeeGSOvUkcP38Zl_7UQ");
 
 
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+
+
 
         setContentView(R.layout.activity_main);
-
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-
-
     }
     @Override
-    @SuppressWarnings( {"MissingPermission"})
+    public void onLocationChanged(Location location) {
+        if (location != null) {
+            Speedometer myLocation = new Speedometer(location, true);
+            this.updateSpeed(myLocation);
+        }
+    }
+
+    public void finish() {
+        super.finish();
+        System.exit(0);
+    }
+
+    private void updateSpeed(Speedometer location) {
+
+        float nCurrentSpeed = 0;
+
+        if (location != null) {
+            location.setUseMetricunits(true);
+            nCurrentSpeed = location.getSpeed();
+        }
+
+        Formatter fmt = new Formatter(new StringBuilder());
+
+        TextView txtCurrentSpeed = (TextView) this.findViewById(R.id.txtCurrentSpeed);
+
+
+        txtCurrentSpeed.setText(String.valueOf(nCurrentSpeed));
+    }
+
+
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onGpsStatusChanged(int event) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    @SuppressWarnings({"MissingPermission"})
 
     public void onStart() {
         super.onStart();
@@ -84,40 +152,42 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
 
         MainActivity.this.mapboxMap = mapboxMap;
         enableLocationComponent();
     }
-    @SuppressWarnings( {"MissingPermission"})
+
+    @SuppressWarnings({"MissingPermission"})
     private void enableLocationComponent() {
-        // Check if permissions are enabled and if not request
+
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
 
-            // Get an instance of the component
+
             LocationComponent locationComponent = mapboxMap.getLocationComponent();
 
-            // Activate
             locationComponent.activateLocationComponent(this);
 
-            // Enable to make component visible
+
             locationComponent.setLocationComponentEnabled(true);
 
-            // Set the component's camera mode
             locationComponent.setCameraMode(CameraMode.TRACKING);
+
             locationComponent.zoomWhileTracking(18);
 
-            Toast.makeText(this,String.valueOf(locationComponent.getLastKnownLocation()),Toast.LENGTH_LONG).show();
+            Toast.makeText(this, String.valueOf(locationComponent.getLastKnownLocation()), Toast.LENGTH_LONG).show();
 
-            // Set the component's render mode
             locationComponent.setRenderMode(RenderMode.COMPASS);
+
         } else {
+
             permissionsManager = new PermissionsManager(this);
+
             permissionsManager.requestLocationPermissions(this);
         }
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
