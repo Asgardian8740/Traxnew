@@ -2,6 +2,9 @@ package in.akshay.traxnew;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -11,19 +14,25 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jjoe64.graphview.GraphView;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.location.LocationComponent;
+import com.mapbox.mapboxsdk.location.Utils;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
+import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Locale;
+
+import rx.Observable;
+import rx.Subscription;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener, Speed_Interface {
 
@@ -32,10 +41,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MapboxMap mapboxMap;
 
 
+    private final List<Graph_Plotter> mPlotters = new ArrayList<>(3);
+
+    private Observable<?> mShakeObservable;
+    private Subscription mShakeSubscription;
+
+
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
 
         Mapbox.getInstance(this, "pk.eyJ1IjoieWFoc2thIiwiYSI6ImNqcWU1MGgwNTRieTk0M3BwMGQ3YjIyMWIifQ.7xJOeeGSOvUkcP38Zl_7UQ");
 
@@ -45,12 +62,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
 
 
-
         setContentView(R.layout.activity_main);
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
+        setupPlotters();
+        mShakeObservable = Accident_Detector.create(this);
+
+    }
+
+
+    private void setupPlotters() {
+        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+        List<Sensor> accSensors = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+
+        mPlotters.add(new Graph_Plotter("ACC", (GraphView) findViewById(R.id.graph2), Accelerometer_Observable.createSensorEventObservable(accSensors.get(0), sensorManager)));
     }
     @Override
     public void onLocationChanged(Location location) {
@@ -115,15 +143,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onStart();
     }
 
+
     @Override
     public void onResume() {
         super.onResume();
+
         mapView.onResume();
+
+        Observable.from(mPlotters).subscribe(Graph_Plotter::onResume);
+        mShakeSubscription = mShakeObservable.subscribe((object)-> Check_Accident.log());
+
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        Observable.from(mPlotters).subscribe(Graph_Plotter::onPause);
         mapView.onPause();
     }
 
@@ -172,13 +207,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             locationComponent.setLocationComponentEnabled(true);
 
-            locationComponent.setCameraMode(CameraMode.TRACKING);
+            locationComponent.setCameraMode(CameraMode.TRACKING_GPS_NORTH);
 
             locationComponent.zoomWhileTracking(18);
 
             Toast.makeText(this, String.valueOf(locationComponent.getLastKnownLocation()), Toast.LENGTH_LONG).show();
 
-            locationComponent.setRenderMode(RenderMode.COMPASS);
+            locationComponent.setRenderMode(RenderMode.GPS);
 
         } else {
 
