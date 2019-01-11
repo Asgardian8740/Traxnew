@@ -1,31 +1,44 @@
 package in.akshay.traxnew;
 
 import android.annotation.SuppressLint;
+
 import android.content.Context;
-import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
+
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.anastr.speedviewlib.Gauge;
+import com.github.anastr.speedviewlib.SpeedView;
 import com.jjoe64.graphview.GraphView;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.location.LocationComponent;
-import com.mapbox.mapboxsdk.location.Utils;
+import com.mapbox.mapboxsdk.location.LocationComponentOptions;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.List;
@@ -39,6 +52,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public MapView mapView;
     private PermissionsManager permissionsManager;
     private MapboxMap mapboxMap;
+    private ActionBar bar;
+
+    Location locationadd;
+
+    SpeedView speedometer;
 
 
     private final List<Graph_Plotter> mPlotters = new ArrayList<>(3);
@@ -47,7 +65,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Subscription mShakeSubscription;
 
 
-    @SuppressLint("MissingPermission")
+
+    @SuppressLint({"MissingPermission"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +85,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+        bar = getSupportActionBar();
+       bar.hide();
+        speedometer = findViewById(R.id.speedView);
+        speedometer.setSpeedTextPosition(SpeedView.Position.BOTTOM_CENTER);
+
+        speedometer.setLowSpeedPercent(30);
+        speedometer.setMediumSpeedPercent(60);
+        speedometer.setMaxSpeed(180);
+        speedometer.setMinSpeed(0);
+        speedometer.setTickNumber(9);
+        speedometer.setTrembleData((float) 0.5,3000);
+
+
+
+
 
         setupPlotters();
         mShakeObservable = Accident_Detector.create(this);
@@ -80,12 +114,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mPlotters.add(new Graph_Plotter("ACC", (GraphView) findViewById(R.id.graph2), Accelerometer_Observable.createSensorEventObservable(accSensors.get(0), sensorManager)));
     }
+
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
             Speedometer myLocation = new Speedometer(location, true);
             this.updateSpeed(myLocation);
+            updatetxtaddress();
         }
+
     }
 
     public void finish() {
@@ -94,6 +131,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void updateSpeed(Speedometer location) {
+
+        if(location==null){
+            speedometer.setSpeedAt(10);
+        }
 
         float nCurrentSpeed = 0;
 
@@ -104,10 +145,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Formatter fmt = new Formatter(new StringBuilder());
 
-        TextView txtCurrentSpeed = (TextView) this.findViewById(R.id.txtCurrentSpeed);
+       /* int selectedColor = Color.argb(20,nCurrentSpeed,(10*nCurrentSpeed),(100*nCurrentSpeed));
+
+        ColorDrawable colorDrawable = new ColorDrawable(selectedColor);
+
+        bar.setBackgroundDrawable(colorDrawable);
+        bar.setTitle(String.valueOf(nCurrentSpeed));*/
+        speedometer.setSpeedAt(nCurrentSpeed);
 
 
-        txtCurrentSpeed.setText(String.valueOf(nCurrentSpeed));
+
+
+
+
+
+
+
+
     }
 
 
@@ -190,8 +244,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
 
+
         MainActivity.this.mapboxMap = mapboxMap;
         enableLocationComponent();
+
     }
 
     @SuppressWarnings({"MissingPermission"})
@@ -200,20 +256,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
 
 
+
+            LocationComponentOptions options = LocationComponentOptions.builder(this)
+                    .trackingGesturesManagement(true)
+                    .accuracyAlpha(0)
+                    .accuracyColor(ContextCompat.getColor(this, R.color.mapboxGreen))
+                    .build();
+
             LocationComponent locationComponent = mapboxMap.getLocationComponent();
 
             locationComponent.activateLocationComponent(this);
 
+            locationComponent.activateLocationComponent(this, options);
 
             locationComponent.setLocationComponentEnabled(true);
+
 
             locationComponent.setCameraMode(CameraMode.TRACKING_GPS_NORTH);
 
             locationComponent.zoomWhileTracking(18);
+            locationadd=locationComponent.getLastKnownLocation();
+
 
             Toast.makeText(this, String.valueOf(locationComponent.getLastKnownLocation()), Toast.LENGTH_LONG).show();
 
+
             locationComponent.setRenderMode(RenderMode.GPS);
+
+
 
         } else {
 
@@ -221,6 +291,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             permissionsManager.requestLocationPermissions(this);
         }
+
     }
 
     @Override
@@ -242,4 +313,38 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             finish();
         }
     }
+
+    public  void  updatetxtaddress(){
+
+        Geocoder geocoder;
+        List<Address> addresses;
+        geocoder = new Geocoder(this, Locale.getDefault());
+
+        TextView loc=(TextView) findViewById(R.id.address);
+
+
+        try {
+
+            addresses = geocoder.getFromLocation(locationadd.getLatitude(),locationadd.getLongitude(), 1);
+
+
+
+
+
+            if (addresses != null && addresses.size() > 0) {
+                String address = addresses.get(0).getAddressLine(0);
+                String city = addresses.get(0).getLocality();
+                String state = addresses.get(0).getAdminArea();
+                String country = addresses.get(0).getCountryName();
+                String postalCode = addresses.get(0).getPostalCode();
+                String knownName = addresses.get(0).getFeatureName();
+
+                loc.setText(address + " " + city + " " + country);
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
 }

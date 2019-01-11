@@ -2,11 +2,17 @@ package in.akshay.traxnew;
 
 import android.graphics.Color;
 import android.hardware.SensorEvent;
+import android.location.Location;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
+import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+
+import java.util.Formatter;
 
 import rx.Observable;
 import rx.Subscription;
@@ -22,8 +28,8 @@ public class Graph_Plotter {
     private final long mStart = System.currentTimeMillis();
 
     protected final LineGraphSeries<DataPoint> mSeriesX;
-    protected final LineGraphSeries<DataPoint> mSeriesY;
-    protected final LineGraphSeries<DataPoint> mSeriesZ;
+   // protected final LineGraphSeries<DataPoint> mSeriesY;
+    //protected final LineGraphSeries<DataPoint> mSeriesZ;
     private final Observable<SensorEvent> mSensorEventObservable;
     private long mLastUpdated = mStart;
     private Subscription mSubscription;
@@ -33,6 +39,7 @@ public class Graph_Plotter {
                          @NonNull Observable<SensorEvent> sensorEventObservable) {
         mName = name;
         mSensorEventObservable = sensorEventObservable;
+
 
         graphView.getViewport().setXAxisBoundsManual(true);
         graphView.getViewport().setMinX(0);
@@ -46,15 +53,15 @@ public class Graph_Plotter {
         graphView.getGridLabelRenderer().setVerticalLabelsVisible(false);
 
         mSeriesX = new LineGraphSeries<>();
-        mSeriesY = new LineGraphSeries<>();
-        mSeriesZ = new LineGraphSeries<>();
+        //mSeriesY = new LineGraphSeries<>();
+        //mSeriesZ = new LineGraphSeries<>();
         mSeriesX.setColor(Color.RED);
-        mSeriesY.setColor(Color.GREEN);
-        mSeriesZ.setColor(Color.BLUE);
+        //mSeriesY.setColor(Color.GREEN);
+        //mSeriesZ.setColor(Color.BLUE);
 
         graphView.addSeries(mSeriesX);
-        graphView.addSeries(mSeriesY);
-        graphView.addSeries(mSeriesZ);
+      //  graphView.addSeries(mSeriesY);
+        //graphView.addSeries(mSeriesZ);
     }
 
     public void onResume(){
@@ -70,9 +77,13 @@ public class Graph_Plotter {
             return;
         }
 
-        appendData(mSeriesX, event.values[0]);
-        appendData(mSeriesY, event.values[1]);
-        appendData(mSeriesZ, event.values[2]);
+
+
+        double g = Math.sqrt(event.values[0]*event.values[0]+ event.values[1]*event.values[1] + event.values[2]*event.values[2]) / 9.8;
+
+        appendData(mSeriesX, g);
+       // appendData(mSeriesY, event.values[1]);
+        //appendData(mSeriesZ, event.values[2]);
     }
 
     private boolean canUpdateUi() {
@@ -91,5 +102,9 @@ public class Graph_Plotter {
     private long getX() {
         return System.currentTimeMillis() - mStart;
     }
+
+
+
+
 }
 
