@@ -1,5 +1,6 @@
 package in.akshay.traxnew;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.SensorEvent;
 import android.location.Location;
@@ -35,6 +36,7 @@ public class Graph_Plotter {
     private Subscription mSubscription;
 
 
+
     public Graph_Plotter(@NonNull String name, @NonNull GraphView graphView,
                          @NonNull Observable<SensorEvent> sensorEventObservable) {
         mName = name;
@@ -64,9 +66,11 @@ public class Graph_Plotter {
         //graphView.addSeries(mSeriesZ);
     }
 
+
     public void onResume(){
         mSubscription = mSensorEventObservable.subscribe(this::onSensorChanged);
     }
+
 
     public void onPause(){
         mSubscription.unsubscribe();
@@ -80,7 +84,7 @@ public class Graph_Plotter {
 
 
         double g = Math.sqrt(event.values[0]*event.values[0]+ event.values[1]*event.values[1] + event.values[2]*event.values[2]) / 9.8;
-
+        ObservableInteger.set((int) g);
         appendData(mSeriesX, g);
        // appendData(mSeriesY, event.values[1]);
         //appendData(mSeriesZ, event.values[2]);

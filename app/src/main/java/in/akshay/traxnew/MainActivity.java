@@ -47,7 +47,7 @@ import java.util.Locale;
 import rx.Observable;
 import rx.Subscription;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener, Speed_Interface {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, PermissionsListener, Speed_Interface{
 
     public MapView mapView;
     private PermissionsManager permissionsManager;
@@ -65,12 +65,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Subscription mShakeSubscription;
 
 
-
     @SuppressLint({"MissingPermission"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
 
 
         Mapbox.getInstance(this, "pk.eyJ1IjoieWFoc2thIiwiYSI6ImNqcWU1MGgwNTRieTk0M3BwMGQ3YjIyMWIifQ.7xJOeeGSOvUkcP38Zl_7UQ");
@@ -86,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         bar = getSupportActionBar();
-       bar.hide();
+        bar.hide();
         speedometer = findViewById(R.id.speedView);
         speedometer.setSpeedTextPosition(SpeedView.Position.BOTTOM_CENTER);
 
@@ -95,14 +93,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         speedometer.setMaxSpeed(180);
         speedometer.setMinSpeed(0);
         speedometer.setTickNumber(9);
-        speedometer.setTrembleData((float) 0.5,3000);
+        speedometer.setTrembleData((float) 0.5, 3000);
 
 
+        ObservableInteger obsInt = new ObservableInteger();
 
-
+        obsInt.setOnIntegerChangeListener(new OnIntegerChangeListener()
+        {
+            @Override
+            public void onIntegerChanged(int newValue)
+            {
+                Toast.makeText(getApplicationContext(),String.valueOf(newValue),Toast.LENGTH_LONG).show();
+            }
+        });
 
         setupPlotters();
         mShakeObservable = Accident_Detector.create(this);
+
 
     }
 
@@ -132,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void updateSpeed(Speedometer location) {
 
-        if(location==null){
+        if (location == null) {
             speedometer.setSpeedAt(10);
         }
 
@@ -154,16 +161,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         speedometer.setSpeedAt(nCurrentSpeed);
 
 
-
-
-
-
-
-
-
-
     }
-
 
 
     @Override
@@ -205,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onResume();
 
         Observable.from(mPlotters).subscribe(Graph_Plotter::onResume);
-        mShakeSubscription = mShakeObservable.subscribe((object)-> Check_Accident.log());
+        mShakeSubscription = mShakeObservable.subscribe((object) -> Check_Accident.log());
 
     }
 
@@ -256,7 +254,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
 
 
-
             LocationComponentOptions options = LocationComponentOptions.builder(this)
                     .trackingGesturesManagement(true)
                     .accuracyAlpha(0)
@@ -275,14 +272,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             locationComponent.setCameraMode(CameraMode.TRACKING_GPS_NORTH);
 
             locationComponent.zoomWhileTracking(18);
-            locationadd=locationComponent.getLastKnownLocation();
+            locationadd = locationComponent.getLastKnownLocation();
 
 
-            Toast.makeText(this, String.valueOf(locationComponent.getLastKnownLocation()), Toast.LENGTH_LONG).show();
+          //  Toast.makeText(this, String.valueOf(locationComponent.getLastKnownLocation()), Toast.LENGTH_LONG).show();
 
 
             locationComponent.setRenderMode(RenderMode.GPS);
-
 
 
         } else {
@@ -314,21 +310,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public  void  updatetxtaddress(){
+    public void updatetxtaddress() {
 
         Geocoder geocoder;
         List<Address> addresses;
         geocoder = new Geocoder(this, Locale.getDefault());
 
-        TextView loc=(TextView) findViewById(R.id.address);
+        TextView loc = (TextView) findViewById(R.id.address);
 
 
         try {
 
-            addresses = geocoder.getFromLocation(locationadd.getLatitude(),locationadd.getLongitude(), 1);
-
-
-
+            addresses = geocoder.getFromLocation(locationadd.getLatitude(), locationadd.getLongitude(), 1);
 
 
             if (addresses != null && addresses.size() > 0) {
@@ -346,5 +339,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             e.printStackTrace();
         }
     }
+
 
 }
