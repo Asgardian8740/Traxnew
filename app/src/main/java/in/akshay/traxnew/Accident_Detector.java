@@ -43,7 +43,6 @@ public class Accident_Detector {
         if (sensorList == null || sensorList.isEmpty()) {
             throw new IllegalStateException("Device has no linear acceleration sensor");
         }
-        Log.i("Hello","hackes");
 
 
         return Accelerometer_Observable.createSensorEventObservable(sensorList.get(0), mSensorManager);

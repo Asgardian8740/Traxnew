@@ -4,25 +4,27 @@ public  class ObservableInteger
 {
     private static  OnIntegerChangeListener listen;
 
-    private static int val;
+    private static double gforce;
+    private  static float gspeed;
 
     public void setOnIntegerChangeListener(OnIntegerChangeListener listener)
     {
         listen = listener;
     }
 
-    public static int get()
+    public static double  getforce()
     {
-        return val;
+        return gforce;
     }
 
-    public static void set(int value)
+
+    public static void setGforce(double value)
     {
-        val = value;
+        gforce = value;
 
         if(listen != null)
         {
-            listen.onIntegerChanged(value);
+            listen.onDoubleChanged(value);
         }
     }
 }

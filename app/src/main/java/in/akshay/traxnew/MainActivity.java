@@ -2,7 +2,10 @@ package in.akshay.traxnew;
 
 import android.annotation.SuppressLint;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
@@ -54,6 +57,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MapboxMap mapboxMap;
     private ActionBar bar;
 
+
+
+//    code for serivce intetn
+    private Intent serviceIntent;
+    float ncurrentspeed;
+
+    private ResponseReceiver receiver = new ResponseReceiver();
+
+
+    // Broadcast component
+    public class ResponseReceiver extends BroadcastReceiver {
+
+        // on broadcast received
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            // Check action name.
+            if(intent.getAction().equals(Accident_Service.ACTION_1)) {
+                int value = intent.getIntExtra("percel", -1);
+
+            }
+        }
+    }
+
     Location locationadd;
 
     SpeedView speedometer;
@@ -96,16 +123,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         speedometer.setTrembleData((float) 0.5, 3000);
 
 
-        ObservableInteger obsInt = new ObservableInteger();
+        serviceIntent = new Intent(this, Accident_Service.class);
+        startService(serviceIntent);
 
-        obsInt.setOnIntegerChangeListener(new OnIntegerChangeListener()
-        {
-            @Override
-            public void onIntegerChanged(int newValue)
-            {
-                Toast.makeText(getApplicationContext(),String.valueOf(newValue),Toast.LENGTH_LONG).show();
-            }
-        });
 
         setupPlotters();
         mShakeObservable = Accident_Detector.create(this);
@@ -158,10 +178,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         bar.setBackgroundDrawable(colorDrawable);
         bar.setTitle(String.valueOf(nCurrentSpeed));*/
+
+
         speedometer.setSpeedAt(nCurrentSpeed);
 
 
     }
+
 
 
     @Override
@@ -200,6 +223,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onResume() {
         super.onResume();
 
+        registerReceiver(receiver, new IntentFilter(
+                Accident_Service.ACTION_1));
+
         mapView.onResume();
 
         Observable.from(mPlotters).subscribe(Graph_Plotter::onResume);
@@ -218,6 +244,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onStop() {
         super.onStop();
         mapView.onStop();
+        unregisterReceiver(receiver);
+
     }
 
     @Override
@@ -289,6 +317,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
     }
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
