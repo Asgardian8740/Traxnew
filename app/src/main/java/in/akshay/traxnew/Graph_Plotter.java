@@ -84,7 +84,7 @@ public class Graph_Plotter {
 
 
         double g = Math.sqrt(event.values[0]*event.values[0]+ event.values[1]*event.values[1] + event.values[2]*event.values[2]) / 9.8;
-        ObservableInteger.set((int) g);
+       ObservableInteger.setGforce(g);
         appendData(mSeriesX, g);
        // appendData(mSeriesY, event.values[1]);
         //appendData(mSeriesZ, event.values[2]);

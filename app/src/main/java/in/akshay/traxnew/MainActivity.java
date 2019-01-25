@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -61,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 //    code for serivce intetn
     private Intent serviceIntent;
-    float ncurrentspeed;
+    int value;
 
     private ResponseReceiver receiver = new ResponseReceiver();
 
@@ -75,14 +76,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             // Check action name.
             if(intent.getAction().equals(Accident_Service.ACTION_1)) {
-                int value = intent.getIntExtra("percel", -1);
-
+                value = intent.getIntExtra("percel", -1);
+                Log.i("Value",String.valueOf(value));
             }
         }
     }
 
-    Location locationadd;
 
+    Location locationadd;
     SpeedView speedometer;
 
 
@@ -98,6 +99,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
 
 
+
+
+
         Mapbox.getInstance(this, "pk.eyJ1IjoieWFoc2thIiwiYSI6ImNqcWU1MGgwNTRieTk0M3BwMGQ3YjIyMWIifQ.7xJOeeGSOvUkcP38Zl_7UQ");
 
 
@@ -107,11 +111,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         setContentView(R.layout.activity_main);
+
+
+        Button btn=(Button)findViewById(R.id.btn);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, NearbyHospital.class);
+                startActivity(intent);
+                finish();
+            }
+        });
+
+
+
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         bar = getSupportActionBar();
-        bar.hide();
         speedometer = findViewById(R.id.speedView);
         speedometer.setSpeedTextPosition(SpeedView.Position.BOTTOM_CENTER);
 

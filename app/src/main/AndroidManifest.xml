@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -21,7 +22,14 @@
 
         <service
             android:name=".Accident_Service"
-            android:exported="false"></service>
+            android:exported="false" />
+
+        <activity android:name=".NearbyHospital"></activity>
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBNwIsNBupAwmCvnjq2JjJa12KBSQx2Mg0"/>
     </application>
+
 
 </manifest>
