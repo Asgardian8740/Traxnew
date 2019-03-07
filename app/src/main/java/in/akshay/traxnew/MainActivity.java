@@ -41,6 +41,7 @@ import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.maps.Style;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,11 +61,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
+
 //    code for serivce intetn
     private Intent serviceIntent;
     int value;
 
     private ResponseReceiver receiver = new ResponseReceiver();
+
+    @Override
+    public void onMapReady(@NonNull MapboxMap mapboxMap) {
+        MainActivity.this.mapboxMap = mapboxMap;
+
+        mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
+            @Override
+            public void onStyleLoaded(@NonNull Style style) {
+
+                enableLocationComponent(style);
+            }
+        });
+
+    }
 
 
     // Broadcast component
@@ -99,35 +115,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
 
 
-
-
-
         Mapbox.getInstance(this, "pk.eyJ1IjoieWFoc2thIiwiYSI6ImNqcWU1MGgwNTRieTk0M3BwMGQ3YjIyMWIifQ.7xJOeeGSOvUkcP38Zl_7UQ");
 
+        setContentView(R.layout.activity_main);
 
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
 
 
-        setContentView(R.layout.activity_main);
-
-
-        Button btn=(Button)findViewById(R.id.btn);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, NearbyHospital.class);
-                startActivity(intent);
-                finish();
-            }
-        });
-
-
-
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+
         bar = getSupportActionBar();
         speedometer = findViewById(R.id.speedView);
         speedometer.setSpeedTextPosition(SpeedView.Position.BOTTOM_CENTER);
@@ -164,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (location != null) {
             Speedometer myLocation = new Speedometer(location, true);
             this.updateSpeed(myLocation);
-            updatetxtaddress();
+            updatetxtaddress(location);
         }
 
     }
@@ -239,11 +239,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onResume() {
         super.onResume();
+        mapView.onResume();
 
         registerReceiver(receiver, new IntentFilter(
                 Accident_Service.ACTION_1));
 
-        mapView.onResume();
+
 
         Observable.from(mPlotters).subscribe(Graph_Plotter::onResume);
         mShakeSubscription = mShakeObservable.subscribe((object) -> Check_Accident.log());
@@ -253,8 +254,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onPause() {
         super.onPause();
-        Observable.from(mPlotters).subscribe(Graph_Plotter::onPause);
         mapView.onPause();
+        Observable.from(mPlotters).subscribe(Graph_Plotter::onPause);
+
     }
 
     @Override
@@ -284,56 +286,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    @Override
-    public void onMapReady(MapboxMap mapboxMap) {
 
-
-        MainActivity.this.mapboxMap = mapboxMap;
-        enableLocationComponent();
-
-    }
-
-    @SuppressWarnings({"MissingPermission"})
-    private void enableLocationComponent() {
-
-        if (PermissionsManager.areLocationPermissionsGranted(this)) {
-
-
-            LocationComponentOptions options = LocationComponentOptions.builder(this)
-                    .trackingGesturesManagement(true)
-                    .accuracyAlpha(0)
-                    .accuracyColor(ContextCompat.getColor(this, R.color.mapboxGreen))
-                    .build();
-
-            LocationComponent locationComponent = mapboxMap.getLocationComponent();
-
-            locationComponent.activateLocationComponent(this);
-
-            locationComponent.activateLocationComponent(this, options);
-
-            locationComponent.setLocationComponentEnabled(true);
-
-
-            locationComponent.setCameraMode(CameraMode.TRACKING_GPS_NORTH);
-
-            locationComponent.zoomWhileTracking(18);
-            locationadd = locationComponent.getLastKnownLocation();
-
-
-          //  Toast.makeText(this, String.valueOf(locationComponent.getLastKnownLocation()), Toast.LENGTH_LONG).show();
-
-
-            locationComponent.setRenderMode(RenderMode.GPS);
-
-
-        } else {
-
-            permissionsManager = new PermissionsManager(this);
-
-            permissionsManager.requestLocationPermissions(this);
-        }
-
-    }
 
 
 
@@ -350,14 +303,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onPermissionResult(boolean granted) {
         if (granted) {
-            enableLocationComponent();
+            mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
+                @Override
+                public void onStyleLoaded(@NonNull Style style) {
+
+                    enableLocationComponent(style);
+                }
+            });
         } else {
             Toast.makeText(this, "Not granted !", Toast.LENGTH_LONG).show();
             finish();
         }
     }
 
-    public void updatetxtaddress() {
+    public void updatetxtaddress(Location location) {
 
         Geocoder geocoder;
         List<Address> addresses;
@@ -368,7 +327,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         try {
 
-            addresses = geocoder.getFromLocation(locationadd.getLatitude(), locationadd.getLongitude(), 1);
+            addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
 
 
             if (addresses != null && addresses.size() > 0) {
@@ -384,6 +343,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        }
+    }
+    @SuppressWarnings( {"MissingPermission"})
+    private void enableLocationComponent(@NonNull Style loadedMapStyle) {
+        if (PermissionsManager.areLocationPermissionsGranted(this)) {
+
+            LocationComponent locationComponent = mapboxMap.getLocationComponent();
+
+            locationComponent.activateLocationComponent(this, loadedMapStyle);
+
+            locationComponent.setLocationComponentEnabled(true);
+
+            locationComponent.setCameraMode(CameraMode.TRACKING_GPS);
+
+            locationComponent.setRenderMode(RenderMode.GPS);
+        } else {
+            permissionsManager = new PermissionsManager(this);
+            permissionsManager.requestLocationPermissions(this);
         }
     }
 

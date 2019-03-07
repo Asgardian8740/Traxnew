@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
-import timber.log.Timber;
+
 
 public class Accident_Detector {
     public static final int THRESHOLD = 13;
